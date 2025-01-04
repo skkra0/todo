@@ -1,6 +1,7 @@
 import classNames from "classnames";
 import { Category } from "./types";
 import Editable from "./editable";
+import { useEffect, useRef } from "react";
 
 interface ProjectProps {
     cat: Category;
@@ -11,15 +12,18 @@ interface ProjectProps {
     master?: boolean;
 }
 const Project = ({cat, onDelete, onUpdate, sendCatToDaily, sendItemToDaily, master} : ProjectProps) => {
+    const catRef = useRef(cat);
+    useEffect(() => {
+        catRef.current = cat;
+    }, [cat]);
     return <div className={classNames("group mb-3 p-3 rounded-md max-w-4xl min-w-96", master ? "bg-master" : "bg-daily")}>
         <Editable
             className="text-2xl inline-block font-semibold"
             initial={cat.title}
             onBlur={(content: string) => {
-                cat.title = content;
-                onUpdate(cat);
+                onUpdate({...catRef.current, title: content} as Category);
             }}
-        />
+        />  
         <div className="hidden group-hover:inline-block">
             <button
                 className={classNames("inline border-2 rounded", master ? "border-master-border" : "border-daily-border")}
@@ -43,8 +47,11 @@ const Project = ({cat, onDelete, onUpdate, sendCatToDaily, sendItemToDaily, mast
                                 hover:border-slate-800"
                         checked={cat.finished[i]}
                         onChange={(e) => {
-                            cat.finished[i] = e.target.checked;
-                            onUpdate(cat);
+                            onUpdate(
+                                {...catRef.current,
+                                    finished: cat.finished.map((f, j) => j === i ? e.target.checked : f)
+                                } as Category
+                            );
                           }}
                     />
                     <label 
@@ -55,8 +62,11 @@ const Project = ({cat, onDelete, onUpdate, sendCatToDaily, sendItemToDaily, mast
                             className="text-lg inline min-w-52"
                             initial={item}
                             onBlur={(content) => {
-                                cat.items[i] = content;
-                                onUpdate(cat);
+                                onUpdate({
+                                    ...catRef.current,
+                                    items: cat.items.map((it, j) => j === i ? content : it)
+                                    } as Category
+                                );
                             }}
                         />
                     </label>
@@ -89,9 +99,11 @@ const Project = ({cat, onDelete, onUpdate, sendCatToDaily, sendItemToDaily, mast
                         initial=""
                         placeholder="New item..."
                         onBlur={(content) => {
-                            cat.items.push(content);
-                            cat.finished.push(false);
-                            onUpdate(cat);
+                            onUpdate({...catRef.current,
+                                items: [...catRef.current.items, content],
+                                finished: [...catRef.current.finished, false]
+                            } as Category
+                        );
                         }}
                         clearOnBlur
                     />
